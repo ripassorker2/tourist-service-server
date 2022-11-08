@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const { query } = require("express");
 const port = process.env.PORT || 5000;
 require("dotenv").config();
 const app = express();
@@ -116,6 +117,18 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/review", async (req, res) => {
+      let filter = {};
+      if (req.query?.reviewId) {
+        filter = {
+          serviceId: req.query?.reviewId,
+        };
+      }
+      const cursor = reviewCollection.find(filter);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
     // // get
     // app.get("/orders", varifyJWT, async (req, res) => {
     //   const user = req.decoded;
@@ -132,6 +145,7 @@ async function run() {
     //   const result = await cursor.toArray();
     //   res.send(result);
     // });
+
     // app.get("/orders/:id", async (req, res) => {
     //   const filter = { _id: ObjectId(req.params.id) };
     //   const cursor = orderCollection.find(filter);
