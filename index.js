@@ -40,6 +40,7 @@ async function run() {
     const serviceCollection = client
       .db("tourist-service")
       .collection("services");
+    const reviewCollection = client.db("tourist-service").collection("reviews");
     // const orderCollection = client.db("travel-spots").collection("order");
 
     // token
@@ -67,6 +68,7 @@ async function run() {
       const service = await cursor.limit(3).toArray();
       res.send(service);
     });
+
     app.get("/services", async (req, res) => {
       const filter = {};
       const cursor = serviceCollection.find(filter);
@@ -74,14 +76,14 @@ async function run() {
       res.send(service);
     });
 
-    // //get by id
+    //get by id
 
-    // app.get("/place/:id", async (req, res) => {
-    //   const id = req.params.id;
-    //   const filter = { _id: ObjectId(id) };
-    //   const result = await placeCollection.findOne(filter);
-    //   res.send(result);
-    // });
+    app.get("/service/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const result = await serviceCollection.findOne(filter);
+      res.send(result);
+    });
 
     // // delete
 
@@ -105,14 +107,14 @@ async function run() {
     //   res.send(result);
     // });
 
-    // -----------------Order ----------------------
+    // -----------------Review----------------------
     //   post
 
-    // app.post("/orders", async (req, res) => {
-    //   const filter = req.body;
-    //   const result = await orderCollection.insertOne(filter);
-    //   res.send(result);
-    // });
+    app.post("/review", async (req, res) => {
+      const filter = req.body;
+      const result = await reviewCollection.insertOne(filter);
+      res.send(result);
+    });
 
     // // get
     // app.get("/orders", varifyJWT, async (req, res) => {
