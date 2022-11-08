@@ -42,7 +42,6 @@ async function run() {
       .db("tourist-service")
       .collection("services");
     const reviewCollection = client.db("tourist-service").collection("reviews");
-    // const orderCollection = client.db("travel-spots").collection("order");
 
     // token
 
@@ -86,6 +85,13 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/services/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const result = await serviceCollection.findOne(filter);
+      res.send(result);
+    });
+
     // // delete
 
     // app.delete("/place/:id", async (req, res) => {
@@ -116,12 +122,28 @@ async function run() {
       const result = await reviewCollection.insertOne(filter);
       res.send(result);
     });
+    // -----------------------services reviews--------------------------------
 
     app.get("/review", async (req, res) => {
       let filter = {};
       if (req.query?.reviewId) {
         filter = {
           serviceId: req.query?.reviewId,
+        };
+      }
+      const cursor = reviewCollection.find(filter);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    // -----------------------my reviews----------------------------
+
+    app.get("/myreview", async (req, res) => {
+      let filter = {};
+      // console.log(req.query.email);
+      if (req.query?.email) {
+        filter = {
+          email: req.query?.email,
         };
       }
       const cursor = reviewCollection.find(filter);
