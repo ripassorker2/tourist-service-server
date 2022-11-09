@@ -2,7 +2,6 @@ const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
-const { query } = require("express");
 const port = process.env.PORT || 5000;
 require("dotenv").config();
 const app = express();
@@ -18,22 +17,21 @@ const client = new MongoClient(uri, {
 });
 
 function varifyJWT(req, res, next) {
-  const authHeader = req?.headers?.authorization;
+  const authHeader = req.headers?.authorization;
   if (!authHeader) {
-    return res.status(404).send({ error: "Unauthorization access !!" });
+    return res.status(401).send({ error: "Unauthorization access !!" });
   }
   const token = authHeader.split(" ")[1];
 
   jwt.verify(token, process.env.USER_TOKEN, function (err, decoded) {
     if (err) {
-      return res.status(402).send({
+      return res.status(403).send({
         message: "Forbidden access",
       });
     }
     req.decoded = decoded;
+    next();
   });
-
-  next();
 }
 
 async function run() {
@@ -43,14 +41,13 @@ async function run() {
       .collection("services");
     const reviewCollection = client.db("tourist-service").collection("reviews");
 
-    // token
+    //  --------------- token--------------
 
-    // app.post("/jwt", (req, res) => {
-    //   const user = req.body;
-    //   console.log(user);
-    //   const token = jwt.sign(user, process.env.USER_TOKEN, { expiresIn: "7d" });
-    //   res.send({ token });
-    // });
+    app.post("/jwt", (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.USER_TOKEN, { expiresIn: "7d" });
+      res.send({ token });
+    });
 
     // post
 
@@ -60,7 +57,7 @@ async function run() {
       res.send(result);
     });
 
-    // // get
+    // // -------------------get---------------------
 
     app.get("/service", async (req, res) => {
       const filter = {};
@@ -76,7 +73,7 @@ async function run() {
       res.send(service);
     });
 
-    //get by id
+    //-----------------get by id---------------
 
     app.get("/service/:id", async (req, res) => {
       const id = req.params.id;
@@ -85,6 +82,8 @@ async function run() {
       res.send(result);
     });
 
+    //-----------------get by id---------------
+
     app.get("/services/:id", async (req, res) => {
       const id = req.params.id;
       const filter = { _id: ObjectId(id) };
@@ -92,37 +91,16 @@ async function run() {
       res.send(result);
     });
 
-    // // delete
-
-    // app.delete("/place/:id", async (req, res) => {
-    //   const id = req.params.id;
-    //   const filter = { _id: ObjectId(id) };
-    //   const result = await placeCollection.deleteOne(filter);
-    //   res.send(result);
-    // });
-
-    // // update
-
-    // app.patch("/place/:id", async (req, res) => {
-    //   const id = req.params.id;
-    //   const filter = { _id: ObjectId(id) };
-    //   const query = req.body;
-    //   const updateDoc = {
-    //     $set: query,
-    //   };
-    //   const result = await placeCollection.updateOne(filter, updateDoc);
-    //   res.send(result);
-    // });
-
     // -----------------Review----------------------
-    //   post
+
+    //  ---------- post-----------
 
     app.post("/review", async (req, res) => {
       const filter = req.body;
       const result = await reviewCollection.insertOne(filter);
       res.send(result);
     });
-    // -----------------------services reviews--------------------------------
+    // -----------------------services reviews---------------------------
 
     app.get("/review", async (req, res) => {
       let filter = {};
@@ -136,50 +114,56 @@ async function run() {
       res.send(result);
     });
 
-    // -----------------------my reviews----------------------------
+    // -----------------------my reviews   and verify token----------------------------
 
-    app.get("/myreview", async (req, res) => {
+    app.get("/myreview", varifyJWT, async (req, res) => {
+      const user = req.decoded;
+
+      if (user?.email !== req?.query?.email) {
+        return res.status(404).send({ error: "Email dosen't match !!" });
+      }
+
       let filter = {};
-      // console.log(req.query.email);
       if (req.query?.email) {
         filter = {
           email: req.query?.email,
         };
       }
+
       const cursor = reviewCollection.find(filter);
       const result = await cursor.toArray();
       res.send(result);
     });
 
-    // // get
-    // app.get("/orders", varifyJWT, async (req, res) => {
-    //   const user = req.decoded;
-    //   // console.log(user);
+    // -------------------get review by id ------------------
 
-    //   const filter = {
-    //     email: req.query.email,
-    //   };
-    //   if (user?.email !== req?.query?.email) {
-    //     return res.status(404).send({ error: "Unauthorization access !!" });
-    //   }
+    app.get("/myreview/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const result = await reviewCollection.findOne(filter);
+      res.send(result);
+    });
 
-    //   const cursor = orderCollection.find(filter);
-    //   const result = await cursor.toArray();
-    //   res.send(result);
-    // });
+    // -------------update review----------------------
 
-    // app.get("/orders/:id", async (req, res) => {
-    //   const filter = { _id: ObjectId(req.params.id) };
-    //   const cursor = orderCollection.find(filter);
-    //   const result = await cursor.toArray();
-    //   res.send(result);
-    // });
+    app.put("/myreview/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const query = req.body;
+      const updateDoc = {
+        $set: query,
+      };
+      const result = await reviewCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
 
-    // app.delete("/orders/:id", async (req, res) => {
-    //   const filter = { _id: ObjectId(req.params.id) };
-    //   const result = await orderCollection.deleteOne(filter);
-    //   res.send(result);
-    // });
+    // --------------delete---------------
+
+    app.delete("/myreview/:id", async (req, res) => {
+      const filter = { _id: ObjectId(req.params.id) };
+      const result = await reviewCollection.deleteOne(filter);
+      res.send(result);
+    });
   } finally {
     //
   }
