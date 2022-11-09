@@ -109,7 +109,7 @@ async function run() {
           serviceId: req.query?.reviewId,
         };
       }
-      const cursor = reviewCollection.find(filter);
+      const cursor = reviewCollection.find(filter).sort({ $natural: -1 });
       const result = await cursor.toArray();
       res.send(result);
     });
@@ -130,7 +130,7 @@ async function run() {
         };
       }
 
-      const cursor = reviewCollection.find(filter);
+      const cursor = reviewCollection.find(filter).sort({ $natural: -1 });
       const result = await cursor.toArray();
       res.send(result);
     });
