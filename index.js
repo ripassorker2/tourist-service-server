@@ -61,14 +61,14 @@ async function run() {
 
     app.get("/service", async (req, res) => {
       const filter = {};
-      const cursor = serviceCollection.find(filter);
+      const cursor = serviceCollection.find(filter).sort({ $natural: -1 });
       const service = await cursor.limit(3).toArray();
       res.send(service);
     });
 
     app.get("/services", async (req, res) => {
       const filter = {};
-      const cursor = serviceCollection.find(filter);
+      const cursor = serviceCollection.find(filter).sort({ $natural: -1 });
       const service = await cursor.toArray();
       res.send(service);
     });
