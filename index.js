@@ -18,6 +18,7 @@ const client = new MongoClient(uri, {
 
 function varifyJWT(req, res, next) {
   const authHeader = req.headers?.authorization;
+
   if (!authHeader) {
     return res.status(401).send({ error: "Unauthorization access !!" });
   }
